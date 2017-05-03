@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 #================================================
 # Purpose: write log file to "$LOG_FILE"
@@ -18,9 +18,21 @@ function log()
 
 function shinylog()
 {
-  
-    echo ";;$@" >> /home/eden/shinylog.txt
+    now=$(date +"%T")
+    echo "status;$now;$@" >> /home/eden/shinylog.txt
 }
+
+
+function shinyerror()
+{
+  now=$(date +"%T")
+  # output to shiny logging
+  echo "error;$now;$@" >> /home/eden/shinylog.txt
+  # output to std out
+  echo "$@ Error" 1>&2
+  exit 1;
+}
+
 #================================================
 # Purpose: write log file for shiny app
 # Arguments:

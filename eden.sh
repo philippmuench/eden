@@ -1,7 +1,10 @@
 #!/bin/bash
-
-. /opt/bin/shflags
-. /home/eden/src/lib.logging.sh 
+# pipeline scripts that generates dN/dS ratio and other files needed for this calcultation.
+# this script get exectuted by start_check.sh
+set +e
+# import
+. /opt/bin/shflags || shinyerror "cannot find /opt/bin/shflags"
+. /home/eden/src/lib.logging.sh || shinyerror "cannot find /home/eden/src/lib.logging.sh"
 
 USAGE="Usage: command -hv args"
 FFN_ENDING=".ffn"
@@ -59,9 +62,6 @@ eval set -- "${FLAGS_ARGV}"
 shift $(($OPTIND - 1))
 TAG=${FLAGS_sample}
 HIDE_LOG=false
-#LOG_FILE="data/$TAG.log"
-#LOG_FILE="/home/eden/data/$TAG.log"
-#LOG_SHINY=${FLAGS_log}
 
 # Only after this point should you enable `set -e` as
 # shflags does not work when that is turned on first.
@@ -75,35 +75,34 @@ orthoMCL() {
         filename=$(basename "$f")
         extension="${filename##*.}"
         basename="${filename%.*}"
-        [[ -f ${FLAGS_input_ffn}/$basename$FFN_ENDING ]] || err "Missing corresponding file" 
+        [[ -f ${FLAGS_input_ffn}/$basename$FFN_ENDING ]] || shinyerror "Missing corresponding file" 
         done
 
     if [ ${FLAGS_test} -eq ${FLAGS_TRUE} ]; then
         log "[I] Create random subset"
-        GFAM_SUBSET=$(mktemp -q /tmp/gfam_subset_XXXX.txt) || err "Failed to create temp file"
+        GFAM_SUBSET=$(mktemp -q /tmp/gfam_subset_XXXX.txt) || shinyerror "Failed to create temp file"
         sort -R ${FLAGS_gfams} | head -n ${FLAGS_num} > $GFAM_SUBSET
-        GFAM_LIST=$(mktemp -q /tmp/gfam_list_XXXX.txt) || {
-        echoerror "Failed to create temp file"; exit 1; }
+        GFAM_LIST=$(mktemp -q /tmp/gfam_list_XXXX.txt) || shinyerror "Failed to create temp file"
         awk -F ':' '{print $1}' $GFAM_SUBSET  > $GFAM_LIST
         log "[I] gfam list (limited to ${FLAGS_num} gfams) written to $GFAM_LIST"
     else
         # create gfam list
-        GFAM_LIST=$(mktemp -q /tmp/gfam_list_XXXX.txt) || err "Failed to create temp file"
+        GFAM_LIST=$(mktemp -q /tmp/gfam_list_XXXX.txt) || shinyerror "Failed to create temp file"
         awk -F ':' '{print $1}' ${FLAGS_gfams} > $GFAM_LIST
         log "[I] gfam list written to $GFAM_LIST"
     fi
 
     # iterate over gfam list
-    rm -rf ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}
-    mkdir -p ${FLAGS_path}/${FLAGS_sample}
-    mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}
-    mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/${FLAGS_ffn}
-    mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/${FLAGS_faa}
+  #  mkdir -p ${FLAGS_path}/${FLAGS_sample} 
+  #  mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}
+    rm -rf ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder} || shinyerror "cannot remove folder"
+    mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/${FLAGS_ffn} || shinyerror "cannot create folder"
+    mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/${FLAGS_faa} || shinyerror "cannot create folder"
     log "[I] Output folder ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/ created"
     log "[I] Exporting hits (paralell mode)"
     cat $GFAM_LIST | parallel --no-notice --bar --files -j ${FLAGS_cpu_number} \
-        getSequences {} ${FLAGS_gfams} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder} $FAA_ENDING $FFN_ENDING ${FLAGS_input_faa} ${FLAGS_input_ffn} #2> /dev/null
-    rm $GFAM_LIST
+        getSequences {} ${FLAGS_gfams} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder} $FAA_ENDING $FFN_ENDING ${FLAGS_input_faa} ${FLAGS_input_ffn}
+    rm $GFAM_LIST || shinyerror "cannot remove file"
 }
 
 # this function is used to find pegs in faa and fna files and create gfam specific fasta files, $3: sample folder
@@ -123,7 +122,7 @@ getSequences()
             echo ">"$i >> $3/ffn/$1$5
             sed '/'$peg_ident'/,/peg/{//!b};d' $7/$peg_sample$5 >> $3/ffn/$1$5
         fi
-    done < <(cat $2 | sed 's/://' | grep "^$1 " | awk '!($1="")' | sed 's/^.//' | sed -e 's/\s\+/\n/g')
+    done < <(cat $2 | sed 's/://' | grep "^$1 " | awk '!($1="")' | sed 's/^.//' | sed -e 's/\s\+/\n/g') || shinyerror "error on getSequences"
 }
 
 # this function check if hits have >1 sequences
@@ -134,9 +133,9 @@ checkHits()
     for file in ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/${FLAGS_faa}/*.faa ; do
         if [ "$(grep -c "^>" "${file}")" -gt 1 ]
         then
-            log "$file looks fine" 
+            log "$file passed check" 
         else
-            mv ${file} ${FLAGS_path}/${FLAGS_sample}/unused || err "error when moving files"
+            mv ${file} ${FLAGS_path}/${FLAGS_sample}/unused || shinyerror "error when moving files"
             log "$file deleted"
         fi
     done
@@ -144,14 +143,13 @@ checkHits()
     for file in ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/${FLAGS_ffn}/*.ffn ; do
         if [ "$(grep -c "^>" "${file}")" -gt 1 ]
         then
-            log "$file looks fine"
+            log "$file passed check"
         else
-            mv ${file} ${FLAGS_path}/${FLAGS_sample}/unused || err "error when moving files"
+            mv ${file} ${FLAGS_path}/${FLAGS_sample}/unused || shinyerror "error when moving files"
             log "$file deleted"
         fi
     done
 }
-
 
 # this function generates codon alignment based on msa faa input ($2). Writes output to $3
 runCodon()
@@ -159,42 +157,41 @@ runCodon()
     filename=$(basename "$1")
     extension="${filename##*.}"
     basename="${filename%.*}"
-    log "runCodon calles with $1"
-    /opt/bin/pal2nal.pl $2/$basename.faa.msa $1 -output fasta > $3/$basename.codon.aln 2> /dev/null || err "pal2nal failed"
+    # runCodon called with $1
+    /opt/bin/pal2nal.pl $2/$basename.faa.msa \
+      $1 -output fasta > $3/$basename.codon.aln 2> /dev/null || shinyerror "pal2nal function failed"
 }
 
 # this function creates MSA alignment for each protein family
 msa()
 {
   rm -rf ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}
-  mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}
-  mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_ffn}
-  mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_faa}
-  log "[I] Run msa alignment (parallel mode)"
+  #mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}
+  mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_ffn} || shinyerror "cannot create folder"
+  mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_faa} || shinyerror "cannot create folder"
+  # run msa alignment
   target=$(ls ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/${FLAGS_faa}/* -lh | wc -l)
   ls ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/${FLAGS_faa}/* |\
       parallel --no-notice --bar --files -j ${FLAGS_cpu_number} \
-      muscle -in {} -out {.}.faa.msa
+      muscle -in {} -out {.}.faa.msa || shinyerror "cannot run parallel for msa"
   ls ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/${FLAGS_ffn}/* |\
       parallel --no-notice --bar --files -j ${FLAGS_cpu_number} \
-      muscle -in {} -out {.}.ffn.msa
-  log "[I] Moving files"
+      muscle -in {} -out {.}.ffn.msa || shinyerror "cannot run parralel for msa"
+
   mv ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/${FLAGS_faa}/*.faa.msa \
-      ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_faa}
+      ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_faa} || shinyerror "cannot move folder"
   mv ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/${FLAGS_ffn}/*.ffn.msa \
-      ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_ffn}
+      ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_ffn} || shinyerror "cannot move folder"
 }
 
 # this function creates codon alignment for each protein family
 codon()
 {
-    log "codon called"
-    rm -rf ${FLAGS_path}/${FLAGS_sample}/${FLAGS_codon_folder}
-    mkdir -p  ${FLAGS_path}/${FLAGS_sample}/${FLAGS_codon_folder}
-    log "[I] Run codon alignment (parallel mode)"
+    rm -rf ${FLAGS_path}/${FLAGS_sample}/${FLAGS_codon_folder} \
+    && mkdir -p  ${FLAGS_path}/${FLAGS_sample}/${FLAGS_codon_folder} \
+    || shinyerror "cannot reset folder"
     ls ${FLAGS_path}/${FLAGS_sample}/${FLAGS_hits_folder}/${FLAGS_ffn}/* | parallel --no-notice --bar --files -j ${FLAGS_cpu_number} runCodon\
      {} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_faa} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_codon_folder} || err "cannot run parallel to generate codon alignment"
-    log "codon parallel executed"
 }
 
 # executes clearcut command used by parallel
@@ -211,10 +208,10 @@ runClearcut()
 # this function creates a tree for each protein family
 tree()
 {
-    rm -rf ${FLAGS_path}/${FLAGS_sample}/${FLAGS_tree_folder} || err "cannot remove directory"
-    mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_tree_folder} || err "cannot create directory"
+    rm -rf ${FLAGS_path}/${FLAGS_sample}/${FLAGS_tree_folder} \
+    && mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_tree_folder} || shinyerror "cannot reset directory"
     ls ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_ffn}/*.msa | parallel --no-notice --bar --files -j ${FLAGS_cpu_number} runClearcut\
-     {} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_ffn} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_tree_folder} || err "cannot run parallel to generate trees"
+     {} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_ffn} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_tree_folder} || shinyerror "cannot run parallel to generate trees"
 }
 
 # this function rewrites fasta files
@@ -236,37 +233,42 @@ runTreeTools()
     extension="${filename##*.}"
     basename="${filename%.*}"
     basename2="${basename%.*}"
-      java -cp /home/eden/src/phyloTreeTools/ phyloDriver \
-        -p -n $3/$basename2.ffn.phy \
-        -t $1 \
-        -f DelTran -cyt \
-        -o $4/$basename.txt \
-        -tc $5/$basename2.msa \
-        -d > /dev/null 2> /dev/null || true
+    java -cp /home/eden/src/phyloTreeTools/ phyloDriver \
+      -p -n $3/$basename2.ffn.phy \
+      -t $1 \
+      -f DelTran -cyt \
+      -o $4/$basename.txt \
+      -tc $5/$basename2.msa \
+      -d > /dev/null 2> /dev/null || true
 }
 
 # this function creates dnds ratio for every protein family
 dnds()
 {
-    rm -rf ${FLAGS_path}/${FLAGS_sample}/${FLAGS_dnds_folder}  || err "cannot create folder"
-    mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_dnds_folder} || err "cannot create folder"
-    reformatfasta ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_ffn} || err "cannot reformat files"
-    reformatfasta ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_faa} || err "cannot reformat files"
+    rm -rf ${FLAGS_path}/${FLAGS_sample}/${FLAGS_dnds_folder} \
+      && mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_dnds_folder} \
+      || shinyerror "cannot reset folder"
+    reformatfasta ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_ffn} \
+      || shinyerror "cannot reformat files"
+    reformatfasta ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_faa} \
+      || shinyerror "cannot reformat files"
     reformatfasta ${FLAGS_path}/${FLAGS_sample}/${FLAGS_codon_folder} || true # ignore errors here that occur when a sequence only containing gaps 
     log "[I] Calculating dnds values"
     ls ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_faa}/*.msa | parallel --no-notice --bar --files -j ${FLAGS_cpu_number} runTreeTools\
-     {} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_tree_folder} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_dnds_folder} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_codon_folder} || err "error on dnds parallel"
+     {} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_tree_folder} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_dnds_folder} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_codon_folder} || shinyerror "error on dnds parallel"
 }
 
 runGaps()
 {
     filename=$(basename "$1")
     basename="${filename%.*}"
-        /home/eden/src/score_conservation.py \
-        -d /home/eden/src/blosum62.distribution \
-        -m /home/eden/src/blosum62.bla \
-        -s vn_entropy -g 0.999999999999999999999999 -w 0  $1 | \
-        awk '{print $2}' | tail -n+2 > $2/$basename.gap.txt || err "error on score_conservation.py"
+    /home/eden/src/score_conservation.py \
+      -d /home/eden/src/blosum62.distribution \
+      -m /home/eden/src/blosum62.bla \
+      -s vn_entropy -g 0.999999999999999999999999 -w 0  $1 | \
+      awk '{print $2}' \
+      | tail -n+2 > $2/$basename.gap.txt \
+      || shinyerror "error on score_conservation.py"
 }
 
 # this function counts then number of gaps in the alignment
@@ -276,7 +278,7 @@ getGaps()
     rm -rf ${FLAGS_path}/${FLAGS_sample}/${FLAGS_gap_folder}
     mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_gap_folder}
     ls ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_faa}/*.msa | parallel --no-notice --bar --files -j ${FLAGS_cpu_number} runGaps\
-     {} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_gap_folder} || err "cannot run parallel to generate gap statistics"
+     {} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_gap_folder} || shinyerror "cannot run parallel to generate gap statistics"
 }
 
 
@@ -287,11 +289,12 @@ runConsensus_faa()
     local basename="${filename%.*}"
     echo ">"$basename > $2/$basename.consensus.faa
     /home/eden/src/createConsensus.py \
-        -d /home/eden/src/blosum62.distribution \
-        -m /home/eden/src/blosum62.bla \
-        -s shannon_entropy \
-        -w 1 $1 \
-        >> $2/$basename.consensus.faa || err "error on createConsensus.py"
+      -d /home/eden/src/blosum62.distribution \
+      -m /home/eden/src/blosum62.bla \
+      -s shannon_entropy \
+      -w 1 $1 \
+      >> $2/$basename.consensus.faa \
+      || shinyerror "error on createConsensus.py"
 }
 
 
@@ -302,23 +305,23 @@ runConsensus_ffn()
     basename="${filename%.*}"
     echo ">"$basename > $2/$basename.consensus.ffn
     /home/eden/src/createConsensus.py \
-        -d /home/eden/src/blosum62.distribution \
-        -m /home/eden/src/blosum62.bla \
-        -s shannon_entropy \
-        -w 1 $1 \
+      -d /home/eden/src/blosum62.distribution \
+      -m /home/eden/src/blosum62.bla \
+      -s shannon_entropy \
+      -w 1 $1 \
         >> $2/$basename.consensus.ffn || err "cannot create consensus ffn"
 }
 
 # this function creates a consensus sequence based on the most occuring base in alignment
-createConensus()
+createCon()
 {
     log "[I] Generate consensus sequence"
     rm -rf ${FLAGS_path}/${FLAGS_sample}${FLAGS_consensus_folder}
     mkdir -p ${FLAGS_path}/${FLAGS_sample}/${FLAGS_consensus_folder};
     ls ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_ffn}/*.msa | parallel --no-notice --bar --files -j ${FLAGS_cpu_number} runConsensus_ffn\
-     {} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_consensus_folder} || err "cannot run runConsensus_ffn in parallel"
+     {} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_consensus_folder} || shinyerror "cannot run runConsensus_ffn in parallel"
     ls ${FLAGS_path}/${FLAGS_sample}/${FLAGS_msa_folder}/${FLAGS_faa}/*.msa | parallel --no-notice --bar --files -j ${FLAGS_cpu_number} runConsensus_faa\
-     {} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_consensus_folder} || err "cannot run runConsensus_faa in parallel"
+     {} ${FLAGS_path}/${FLAGS_sample}/${FLAGS_consensus_folder} || shinyerror "cannot run runConsensus_faa in parallel"
 }
 
 generateGfamTable()
@@ -327,11 +330,18 @@ generateGfamTable()
     log "[I] Generate gfam list from all .${FLAGS_annotation} files in ${FLAGS_annotation_folder} folder"
     if [ ! -e "${FLAGS_gfams}" ]; then
         # get a list with all KO terms
-        cat ${FLAGS_annotation_folder}*.${FLAGS_annotation} | awk -F '\t' '{print $2}' | sort | uniq | tail -n +2 > all_terms.tmp
+        cat ${FLAGS_annotation_folder}*.${FLAGS_annotation} \
+          | awk -F '\t' '{print $2}' \
+          | sort \
+          | uniq \
+          | tail -n +2 > all_terms.tmp
         while read ko; do
-            echo "$ko:" $(grep "$ko" ${FLAGS_annotation_folder}/*${FLAGS_annotation} | awk -F '\t' '{print $1}' | awk -F ':' '{print $2}' | tr "\n" " ") >> ${FLAGS_gfams}
+            echo "$ko:" $(grep "$ko" ${FLAGS_annotation_folder}/*${FLAGS_annotation} \
+              | awk -F '\t' '{print $1}' \
+              | awk -F ':' '{print $2}' \
+              | tr "\n" " ") >> ${FLAGS_gfams}
             done <all_terms.tmp
-    rm -f all_terms.tmp
+    rm -f all_terms.tmp || shinyerror "cannot remove file"
     else
         log "[E] ${FLAGS_gfams} exists. This file will not be overwritten. If you want to use this gfam table as input, please remove the -k or --generateGfamTable option."
     fi
@@ -343,32 +353,52 @@ main()
     export -f runCodon
     export -f runClearcut
     export -f runTreeTools
-    export -f runConsensus_faa
     export -f runConsensus_ffn
+    export -f runConsensus_faa
+    export -f createCon
     export -f runGaps
     rm -rf $LOG_FILE || true
 
     if [ ${FLAGS_docker} -eq ${FLAGS_TRUE} ]; then
-        rm -rf ${FLAGS_path}/${FLAGS_sample}
-        mkdir ${FLAGS_path}/${FLAGS_sample}
+        rm -rf ${FLAGS_path}/${FLAGS_sample} \
+          && mkdir ${FLAGS_path}/${FLAGS_sample} \
+          || shinyerror "cannot create folder"
         # check if sample table is provided
         if [ ! -f /home/eden/data/samples.txt ]; then
-            log "[I] samples.txt not found, run analysis on pooled samples"
-            # these steps are executed if a samples.txt will not be profided, analysis based on grouping of all sampels
-	    shinylog "extract hits on pooled samples" & orthoMCL
-            shinylog "checking hits on pooled samples" & checkHits
-            shinylog "generate alignments on pooled samples" & msa
-            shinylog "generate codon alignment on pooled samples" & codon
-            shinylog "generating trees on pooled samples" & tree
-            shinylog "calculate ratio on pooled samples" & dnds
-            shinylog "get alignment informations on pooled samples" & getGaps
-            shinylog "create consensus sequence on pooled samples" & createConensus
-	    shinylog "exporting results"
-            log "analysis complete, exported to /home/eden/data/${FLAGS_name}.tar]"
-            pwd=$(pwd)
-            cd ${FLAGS_path} && tar --append --file=data/tar/${FLAGS_name}.tar ${FLAGS_sample} && cd $pwd
-            shinylog "dnds finished"
-            echocolor "[Results for pooled samples are written to /home/eden/data/${FLAGS_name}.tar]"
+          # these steps are executed if a samples.txt will not be profided, analysis based on grouping of all sampels
+	  orthoMCL \
+            && shinylog "extract hits on pooled samples" \
+            || shinyerror "error on extract hits on pooled samples"
+	  checkHits \
+            && shinylog "checking hits on pooled samples" \
+            || shinyerror "error on checking hits on pooled samples"
+          msa \
+            && shinylog "generate alignments on pooled samples" \
+            || shinyerror "error on generate alignments on pooled samples"
+	  codon \
+            && shinylog "generate codon alignment on pooled samples" \
+            || shinyerror "error on generate codon alignment on pooled samples"
+	  tree \
+            && shinylog "generating trees on pooled samples" \
+            || shinyerror "error on generating trees on pooled samples"
+	  dnds \
+            && shinylog "calculate ratio on pooled samples" \
+            || shinyerror "error on calculate ratio on pooled samples"
+	  getGaps \
+            && shinylog "get alignment informations on pooled samples" \
+            || shinyerror "error on alignment informations on pooled samples"
+	  createCon \
+            && shinylog "create consensus sequence on pooled samples" \
+            || shinyerror "error on consensus sequence on pooled samples"
+
+          log "analysis complete, exported to /home/eden/data/${FLAGS_name}.tar]"
+
+          pwd=$(pwd)
+          cd ${FLAGS_path} \
+            && tar --append --file=data/tar/${FLAGS_name}.tar ${FLAGS_sample} \
+            && cd $pwd \
+            && shinylog  "results exported" \
+            && echocolor "[Results for pooled samples are written to /home/eden/data/${FLAGS_name}.tar]"
         else
             log "[I] samples.txt detected, run analysis on groups"
             # run over all lines in sample file and start pipeline for new samples
@@ -376,50 +406,90 @@ main()
                 sample_name=$(echo $line | cut -f1 -d ';')
                 sample_files=$(echo $line | cut -f2 -d ';')
                 fileArray=(${sample_files//+/ })
-                rm -rf /home/eden/faa_tmp /home/eden/ffn_tmp
-                mkdir -p /home/eden/faa_tmp /home/eden/ffn_tmp
+
+                rm -rf /home/eden/faa_tmp /home/eden/ffn_tmp \
+		  && mkdir -p /home/eden/faa_tmp /home/eden/ffn_tmp \
+		  || shinyerror "cannot create folder"
+
                 if [ ${#fileArray[@]} -eq 1 ]; then
                     # there is only one file
-                    cp /home/eden/data/${FLAGS_faa}/$sample_files$FAA_ENDING /home/eden/faa_tmp/
-                    cp /home/eden/data/${FLAGS_ffn}/$sample_files$FFN_ENDING /home/eden/ffn_tmp/
+                    cp /home/eden/data/${FLAGS_faa}/$sample_files$FAA_ENDING /home/eden/faa_tmp/ \
+                      || shinyerror "cannot copy files"
+                    cp /home/eden/data/${FLAGS_ffn}/$sample_files$FFN_ENDING /home/eden/ffn_tmp/ \
+                      || shinyerror "cannot copy files"
                 else
                     # iterate through the array and copy files to tmp folder
                     for i in "${fileArray[@]}"
                     do
                     :
-                        cp ${FLAGS_input_faa}/$i$FAA_ENDING /home/eden/faa_tmp/
-                        cp ${FLAGS_input_ffn}/$i$FFN_ENDING /home/eden/ffn_tmp/
+                        cp ${FLAGS_input_faa}/$i$FAA_ENDING /home/eden/faa_tmp/ \
+                          || shinyerror "cannot copy files"
+                        cp ${FLAGS_input_ffn}/$i$FFN_ENDING /home/eden/ffn_tmp/ \
+                          || shinyerror "cannot copy files"
                     done
                 fi
                 log "[I] Processing $sample_name with sample $sample_files"
                 if [ ${FLAGS_test} -eq ${FLAGS_TRUE} ]; then
                     log "[I] test mode, run on subset of 100 groups"
-                    /home/eden/eden.sh --sample $sample_name --input_faa /home/eden/faa_tmp --input_ffn /home/eden/ffn_tmp --all --gfams ${FLAGS_gfams} --test -n ${FLAGS_num} --cpu_number ${FLAGS_cpu_number} --gap_threshold ${FLAGS_gap_threshold} --name ${FLAGS_name}
+                    /home/eden/eden.sh --sample $sample_name \
+                      --input_faa /home/eden/faa_tmp \
+                      --input_ffn /home/eden/ffn_tmp \
+                      --all \
+                      --gfams ${FLAGS_gfams} \
+                      --test -n ${FLAGS_num} \
+                      --cpu_number ${FLAGS_cpu_number} \
+                      --gap_threshold ${FLAGS_gap_threshold} \
+                      --name ${FLAGS_name}
                 else
-                    /home/eden/eden.sh --sample $sample_name --input_faa /home/eden/faa_tmp --input_ffn /home/eden/ffn_tmp --all --gfams ${FLAGS_gfams} --cpu_number ${FLAGS_cpu_number} --gap_threshold ${FLAGS_gap_threshold} --name ${FLAGS_name}
+                    /home/eden/eden.sh --sample $sample_name \
+                    --input_faa /home/eden/faa_tmp \
+                    --input_ffn /home/eden/ffn_tmp \
+                    --all --gfams ${FLAGS_gfams} \
+                    --cpu_number ${FLAGS_cpu_number} \
+                    --gap_threshold ${FLAGS_gap_threshold} \
+                    --name ${FLAGS_name}
                 fi
             done <${FLAGS_sample_list}
-        fi
+        fi && shinylog "eden finished" || shinyerror "error dnds script"
     fi
 
     # these steps are executed if a samples.txt file will be provided for each grouping seperately
     if [ ${FLAGS_all} -eq ${FLAGS_TRUE} ]; then
-	shinylog "extract hits on $TAG samples" & orthoMCL
-	shinylog "checking hits on $TAG samples" & checkHits
-	shinylog "generate alignments on $TAG samples" & msa
-	shinylog "generate codon alignment on $TAG samples" & codon
-	shinylog "generating trees on $TAG samples" & tree
-	shinylog "calculate ratio on $TAG samples" & dnds
-	shinylog "get alignment informations on $TAG samples" & getGaps
-	shinylog "create consensus sequence on $TAG samples" & createConensus
-	shinylog "exporting results"		
+	orthoMCL \
+          && shinylog "extract hits on $TAG samples" \
+          || shinyerror "error on extract hits on $TAG samples"
+	checkHits \
+          && shinylog "checking hits on $TAG samples" \
+          || shinyerror "error on checking hits on $TAG samples"
+	msa \
+          && shinylog "generate alignments on $TAG samples" \
+          || shinyerror "error on generate alignments on $TAG samples"
+	codon \
+          && shinylog "generate codon alignment on $TAG samples" \
+          || shinyerror "error on generate codon alignment on $TAG samples"
+	tree \
+          && shinylog "generating trees on $TAG samples" \
+          || shinyerror "error on generating trees on $TAG samples"
+	dnds \
+          && shinylog "calculate ratio on $TAG samples" \
+          || shinyerror "error on calculate ratio on $TAG samples"
+	getGaps \
+          && shinylog "get alignment informations on $TAG samples" \
+          || shinyerror "error on alignment informations on $TAG samples"
+	createCon \
+          && shinylog "create consensus sequence on $TAG samples" \
+          || shinyerror "error on consensus sequence on $TAG samples"
+	
+	# export results to folder and set access rights
         pwd=$(pwd)
-        cd ${FLAGS_path} && tar --append --file=data/tar/${FLAGS_name}.tar ${FLAGS_sample} && cd $pwd
-        chmod 777 ${FLAGS_path}/data/tar/${FLAGS_name}.tar
-        echocolor "[Results for sample $TAG are written to /home/eden/data/tar/${FLAGS_name}.tar]"
-	shinylog "dnds finished"
-
-    fi
+        cd ${FLAGS_path} \
+          && tar --append --file=data/tar/${FLAGS_name}.tar ${FLAGS_sample} \
+          && cd $pwd \
+          && chmod 777 ${FLAGS_path}/data/tar/${FLAGS_name}.tar \
+          && echocolor "[Results for sample $TAG are written to /home/eden/data/tar/${FLAGS_name}.tar]" \
+          && shinylog "exporting results for sample $TAG" \
+          || shinyerror "error on exporting results"		
+    fi && shinylog "eden finished" || shinyerror "error dnds script"
 }
 
 main "$@"

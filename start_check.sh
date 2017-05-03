@@ -1,29 +1,64 @@
 #!/bin/bash
-# this script gets executed when the "start check" button is pressed on the eden shiny app
-# example usuage:
-# /home/eden/start_check.sh /home/eden/data/faa /home/eden/data/ffn 4 example_run_1 0.7 /home/eden/data/model.hmm
+# entrypoint for shiny, this script will run check.sh and eden.sh
 
-. /home/eden/src/lib.logging.sh
+set -e
+LOCK_FILE=/home/eden/lock.txt
 
-# /home/eden/check.sh --faa_folder /home/eden/data/faa --ffn_folder /home/eden/data/ffn --cpu 2 --hmmfile /home/eden/data/model.hmm --output /home/eden/data/ko --gfam /home/eden/data/groups.txt
+# source logging functions
+. /home/eden/src/lib.logging.sh \
+  || shinyerror "cannot find src/lib.logging.sh, error code 98"
 
-#  /home/eden/eden.sh --docker --cpu_number 3 --gap_threshold 0.8 --name bla
-touch /home/eden/lock.txt # create lock file
+function clean_up {
+  rm -f $LOCK_FILE
+  exit
+}
 
-shinylog "start check"
+# remove lock file if something goes wrong
+trap clean_up SIGHUP SIGINT SIGTERM
 
-/home/eden/check.sh --faa_folder $1 --ffn_folder $2 --cpu $3 --hmmfile $6 --output /home/eden/data/ko --gfam /home/eden/data/groups.txt
-shinylog "run prodigal" "check passed"
+# generate lock file, this will be processed by shiny to show that the process in running
+touch $LOCK_FILE \
+  && shinylog "start process" \
+  || shinyerror "cannot create lock file, error code 99"
 
-if [ -z "$7" ]; then
-  shinylog "start pooled analysis"
-  /home/eden/eden.sh --docker --cpu_number $3 --gap_threshold $5 --name $4
+# run check procedure
+shinylog "running check.sh"
+echo "/home/eden/check.sh --faa_folder $1 --ffn_folder $2 --cpu $3 --hmmfile $6 --output /home/eden/data/ko --gfam /home/eden/data/groups.txt"
+
+/home/eden/check.sh --faa_folder $1 \
+  --ffn_folder $2 \
+  --cpu $3 \
+  --hmmfile $6 \
+  --output /home/eden/data/ko \
+  --gfam /home/eden/data/groups.txt \
+  && shinylog "check finished" \
+  || shinyerror "cannot start check procedure, error code: 100"
+
+# run eden
+if [ -z "$7" ] && [ "$checkpassed" = true ]; then
+  shinylog "running eden.sh"
+  /home/eden/eden.sh --docker \
+  --cpu_number $3 \
+  --gap_threshold $5 \
+  --name $4 \
+  && shinylog "eden finished" \
+  && edenpassed=true \
+  || shinyerror "canont run eden.sh"
 else
-  shinylog "start pooled analysis"
-  /home/eden/eden.sh --docker --cpu_number $3 --gap_threshold $5 --name $4 --sample_list $7
-fi
+  shinylog "running eden.sh"
+  /home/eden/eden.sh --docker\
+  --cpu_number $3 \
+  --gap_threshold $5 \
+  --name $4 \
+  --sample_list $7 \
+  && shinylog "eden finished"\
+  && edenpassed=true \
+  || shinyerror "canont run eden.sh"
+fi || shinyerror "cannot execute eden.sh, error code 101"
 
-# remove lock file
-rm -rf /home/eden/lock.txt
-shinylog "finished"
+# remove lock file if eden completed
+if [ "$edenpassed" = true ]; then
+  rm -f $LOCK_FILE
+  shinylog "eden finished"
+fi
 
