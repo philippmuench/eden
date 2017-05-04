@@ -1,11 +1,10 @@
 FROM textlab/ubuntu-essential
 
-MAINTAINER philipp.muench@helmholt-hzi.de
+MAINTAINER pmuench
 
 #========================================
 # Customize sources for apt-get 
 #========================================
-
 
 RUN echo "deb http://archive.ubuntu.com/ubuntu vivid main universe\n" > /etc/apt/sources.list &&\
   echo "deb http://archive.ubuntu.com/ubuntu vivid-updates main universe\n" >> /etc/apt/sources.list &&\
@@ -78,7 +77,7 @@ RUN wget https://rawgit.com/naturesubmission/eden_visualizer/master/bundle.tar.g
  chmod -R 777 /srv/shiny-server/eden-visualizer &&\
  chown -R root:root /srv/shiny-server 
 
-RUN wget https://raw.githubusercontent.com/philippmuench/eden_ui/master/packrat/bundles/eden_ui-2017-04-12.tar.gz -O /srv/shiny-server/bundle.tar.gz &&\
+RUN wget https://raw.githubusercontent.com/philippmuench/eden_ui/master/packrat/bundles/both.tar.gz -O /srv/shiny-server/bundle.tar.gz &&\
  tar -xvzf /srv/shiny-server/bundle.tar.gz --directory=/srv/shiny-server/ && rm -f /srv/shiny-server/bundle.tar.gz &&\
  chmod -R 777 /srv/shiny-server/eden_ui &&\
  chown -R root:root /srv/shiny-server
@@ -190,9 +189,9 @@ RUN mkdir /home/eden/tigr_data &&\
 # get example files
 #========================================
 RUN mkdir -p /home/eden/data/tar &&\
-  wget https://www.dropbox.com/s/xf86eaml6qauv3q/oligo.tar?dl=1 -O /home/eden/data/tar/oligo.tar &&\
-  wget https://www.dropbox.com/s/7usgqx72m4ndlf2/bmi.tar?dl=1 -O /home/eden/data/tar/bmi.tar  &&\
-  wget https://www.dropbox.com/s/ww9ubr4dufh15r9/bodysites.tar?dl=1 -O /home/eden/data/tar/bodysites.tar
+  wget https://www.dropbox.com/s/xf86eaml6qauv3q/oligo.tar?dl=1 -O /home/eden/data/tar/oligo.tar #&&\
+#  wget https://www.dropbox.com/s/7usgqx72m4ndlf2/bmi.tar?dl=1 -O /home/eden/data/tar/bmi.tar  &&\
+#  wget https://www.dropbox.com/s/ww9ubr4dufh15r9/bodysites.tar?dl=1 -O /home/eden/data/tar/bodysites.tar
 #========================================
 # Entrypoint
 #========================================
