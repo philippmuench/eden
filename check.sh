@@ -123,7 +123,7 @@ runProdigal(){
         name=$(basename "$file" .fasta)
         /opt/bin/prodigal -i $file -a ${FLAGS_faa_folder}/$name.faa -d ${FLAGS_ffn_folder}/$name.ffn -o /tmp/$name.prodigal >/dev/null 2>&1 || { err "Failed to run prodigal. Aborting."; exit; }
     done
-    rm -rf /tmp/*
+#    rm -rf /tmp/*
 }
 
 runProkka(){
@@ -136,7 +136,7 @@ runProkka(){
 	   echo "Processing $name"
      /home/eden/prokka/bin/prokka $file --centre eden --compliant --quiet --cpus ${FLAGS_cpu} --prefix $name --outdir /tmp --force >/dev/null 2>&1 || err "Failed to run prokka. Aborting."
     done
-    rm -rf /tmp/*
+#    rm -rf /tmp/*
 }
 
 runMetaGenemark(){
@@ -147,7 +147,7 @@ runMetaGenemark(){
         echo "Processing $name"
         gmhmmp -m ${FLAGS_model} -A /tmp/$name.faa -D /tmp/name.ffn $file >/dev/null 2>&1 || err "Failed to run MetaGeneMark. Aborting."
     done
-    rm -rf /tmp/*
+   # rm -rf /tmp/*
 }
 
 rewriteHeader(){
@@ -158,7 +158,7 @@ rewriteHeader(){
         mv ${FLAGS_ffn_folder}/$name.ffn /tmp/$name.ffn
         awk '/^>/{print ">'"$name"'|'"$name"'.peg." ++i; next}{print}' < /tmp/$name.faa | sed  '/^$/d' > ${FLAGS_faa_folder}/$name.faa || { err "Cannot rewrite fasta headers. Aborting."; exit; }
         awk '/^>/{print ">'"$name"'|'"$name"'.peg." ++i; next}{print}' < /tmp/$name.ffn | sed  '/^$/d' > ${FLAGS_ffn_folder}/$name.ffn || { err "Cannot rewrite fasta headers. Aborting."; exit; }
-        rm -rf /tmp/*
+  #      rm -rf /tmp/*
     done
 }
 
