@@ -153,14 +153,11 @@ runMetaGenemark(){
 rewriteHeader(){
     for file in ${FLAGS_ffn_folder}/*.ffn; do
     name=$(basename "$file" .ffn)
-    echo ";;Processing $name" >> /home/eden/shinylog.txt
         # rewrite fasta header
         mv ${FLAGS_faa_folder}/$name.faa /tmp/$name.faa 
         mv ${FLAGS_ffn_folder}/$name.ffn /tmp/$name.ffn
-        echo ";; move complete" >> /home/eden/shinylog.txt
         awk '/^>/{print ">'"$name"'|'"$name"'.peg." ++i; next}{print}' < /tmp/$name.faa | sed  '/^$/d' > ${FLAGS_faa_folder}/$name.faa || { err "Cannot rewrite fasta headers. Aborting."; exit; }
         awk '/^>/{print ">'"$name"'|'"$name"'.peg." ++i; next}{print}' < /tmp/$name.ffn | sed  '/^$/d' > ${FLAGS_ffn_folder}/$name.ffn || { err "Cannot rewrite fasta headers. Aborting."; exit; }
-        echo ";;awk complete" >> /home/eden/shinylog.txt
         rm -rf /tmp/*
     done
 }
@@ -186,18 +183,25 @@ main()
         fi
         # run annotation if no groups.txt is provided
         if [ ! -f /home/eden/data/groups.txt ]; then
-            shinylog "rewrite fasta headers"
-            rewriteHeader
-            shinylog "annotate ORFs" 
-            startAnnotation
-	    shinylog "generate ORF table"
-	    generateTable
+
+        rewriteHeader \
+          && shinylog "rewrite fasta headers" \
+          || shinyerror "error on rewriting fasta headers"
+    
+        startAnnotation \
+          && shinylog "annotate ORFs" \
+          || shinyerror "error on annotate ORFs"
+            
+        generateTable \
+          && shinylog "generate ORF table" \
+          || shinyerror "error on generate ORF table"    
         fi
-        shinylog "checking grouping table"
-        checkGroupingTable
+
+        checkGroupingTable \
+          && shinylog "checking grouping table" \
+          || shinyerror "error on checking grouping table"
     else
-	shinylog "error"
-        exit
+	shinyerror "error"
     fi
 
 }

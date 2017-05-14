@@ -6,5 +6,5 @@
 
 rm -f /home/eden/shinylog.txt
 touch /home/eden/shinylog.txt
-echo ";; start shiny server" > /home/eden/shinylog.txt
+#echo ";; start shiny server" > /home/eden/shinylog.txt
 exec shiny-server > /var/log/shiny-server.log 2>&1

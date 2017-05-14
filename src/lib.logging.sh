@@ -29,8 +29,8 @@ function shinyerror()
   # output to shiny logging
   echo "error;$now;$@" >> /home/eden/shinylog.txt
   # output to std out
-  echo "$@ Error" 1>&2
-  exit 1;
+ # echo "$@ Error" 1>&2
+ # exit 1;
 }
 
 #================================================

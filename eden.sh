@@ -202,7 +202,7 @@ runClearcut()
     basename="${filename%.*}"
     basename2="${basename%.*}"
     # this will throw an error if there are < 2 sequences in alignment, need to filter it before
-    clearcut --in $2/$basename2.ffn.msa -P -a --out $3/$basename.phy || true
+    /opt/bin/clearcut --in $2/$basename2.ffn.msa -P -a --out $3/$basename.phy || true
 }
 
 # this function creates a tree for each protein family
@@ -450,7 +450,7 @@ main()
                     --name ${FLAGS_name}
                 fi
             done <${FLAGS_sample_list}
-        fi && shinylog "eden finished" || shinyerror "error dnds script"
+        fi || shinyerror "error dnds script"
     fi
 
     # these steps are executed if a samples.txt file will be provided for each grouping seperately
@@ -489,7 +489,7 @@ main()
           && echocolor "[Results for sample $TAG are written to /home/eden/data/tar/${FLAGS_name}.tar]" \
           && shinylog "exporting results for sample $TAG" \
           || shinyerror "error on exporting results"		
-    fi && shinylog "eden finished" || shinyerror "error dnds script"
+    fi || shinyerror "error dnds script"
 }
 
 main "$@"

@@ -59,6 +59,6 @@ fi || shinyerror "cannot execute eden.sh, error code 101"
 # remove lock file if eden completed
 if [ "$edenpassed" = true ]; then
   rm -f $LOCK_FILE
-  shinylog "eden finished"
+  shinylog "finished"
 fi
 

@@ -77,7 +77,7 @@ RUN wget https://rawgit.com/naturesubmission/eden_visualizer/master/bundle.tar.g
  chmod -R 777 /srv/shiny-server/eden-visualizer &&\
  chown -R root:root /srv/shiny-server 
 
-RUN wget https://raw.githubusercontent.com/philippmuench/eden_ui/master/packrat/bundles/both.tar.gz -O /srv/shiny-server/bundle.tar.gz &&\
+RUN wget https://raw.githubusercontent.com/philippmuench/eden_ui/master/packrat/bundles/eden_ui-2017-05-12.tar.gz -O /srv/shiny-server/bundle.tar.gz &&\
  tar -xvzf /srv/shiny-server/bundle.tar.gz --directory=/srv/shiny-server/ && rm -f /srv/shiny-server/bundle.tar.gz &&\
  chmod -R 777 /srv/shiny-server/eden_ui &&\
  chown -R root:root /srv/shiny-server
