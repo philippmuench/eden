@@ -58,6 +58,7 @@ fi || shinyerror "cannot execute eden.sh, error code 101"
 
 # remove lock file if eden completed
 if [ "$edenpassed" = true ]; then
+  mv data/tar_tmp/*.tar data/tar/
   rm -f $LOCK_FILE
   shinylog "finished"
 fi

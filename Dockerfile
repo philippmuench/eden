@@ -72,12 +72,12 @@ COPY start_server.sh /home/eden/start_server.sh
 # Get Shiny App from github.com
 #========================================
 
-RUN wget https://rawgit.com/naturesubmission/eden_visualizer/master/bundle.tar.gz -O /srv/shiny-server/bundle.tar.gz &&\
- tar -xvzf /srv/shiny-server/bundle.tar.gz --directory=/srv/shiny-server/ && rm -f /srv/shiny-server/bundle.tar.gz &&\
- chmod -R 777 /srv/shiny-server/eden-visualizer &&\
- chown -R root:root /srv/shiny-server 
+#RUN wget https://rawgit.com/naturesubmission/eden_visualizer/master/bundle.tar.gz -O /srv/#shiny-server/bundle.tar.gz &&\
+# tar -xvzf /srv/shiny-server/bundle.tar.gz --directory=/srv/shiny-server/ && rm -f /srv/#shiny-server/bundle.tar.gz &&\
+# chmod -R 777 /srv/shiny-server/eden-visualizer &&\
+# chown -R root:root /srv/shiny-server 
 
-RUN wget https://raw.githubusercontent.com/philippmuench/eden_ui/master/packrat/bundles/eden_ui-2017-05-14.tar.gz -O /srv/shiny-server/bundle.tar.gz &&\
+RUN wget https://raw.githubusercontent.com/philippmuench/eden_ui/master/packrat/bundles/eden_ui-2017-05-15.tar.gz -O /srv/shiny-server/bundle.tar.gz &&\
  tar -xvzf /srv/shiny-server/bundle.tar.gz --directory=/srv/shiny-server/ && rm -f /srv/shiny-server/bundle.tar.gz &&\
  chmod -R 777 /srv/shiny-server/eden_ui &&\
  chown -R root:root /srv/shiny-server
@@ -90,12 +90,13 @@ COPY src/index.html /srv/shiny-server/index.html
 COPY src/bootstrap.css /srv/shiny-server/bootstrap.css
 COPY src/bootstrap.min.css /srv/shiny-server/bootstrap.min.css
 COPY src/logo2.png /srv/shiny-server/logo2.png
+COPY src/logo.png /srv/shiny-server/logo.png
 
 #========================================
 # install R packages
 #========================================
 
-RUN R -e 'setwd("/srv/shiny-server/eden-visualizer"); install.packages("packrat" , repos="http://cran.us.r-project.org"); packrat::restore()'
+#RUN R -e 'setwd("/srv/shiny-server/eden-visualizer"); install.packages("packrat" , #repos="http://cran.us.r-project.org"); packrat::restore()'
 RUN R -e 'setwd("/srv/shiny-server/eden_ui"); install.packages("packrat" , repos="http://cran.us.r-project.org"); packrat::restore()'
 
 #========================================

@@ -358,6 +358,7 @@ main()
     export -f createCon
     export -f runGaps
     rm -rf $LOG_FILE || true
+    mkdir -p ${FLAGS_path}/data/tar_tmp/
 
     if [ ${FLAGS_docker} -eq ${FLAGS_TRUE} ]; then
         rm -rf ${FLAGS_path}/${FLAGS_sample} \
@@ -395,10 +396,10 @@ main()
 
           pwd=$(pwd)
           cd ${FLAGS_path} \
-            && tar --append --file=data/tar/${FLAGS_name}.tar ${FLAGS_sample} \
+            && tar --append --file=data/tar_tmp/${FLAGS_name}.tar ${FLAGS_sample} \
             && cd $pwd \
             && shinylog  "results exported" \
-            && echocolor "[Results for pooled samples are written to /home/eden/data/${FLAGS_name}.tar]"
+            && echocolor "[Results for pooled samples are written to /home/eden/data/tar_tmp/${FLAGS_name}.tar]"
         else
             log "[I] samples.txt detected, run analysis on groups"
             # run over all lines in sample file and start pipeline for new samples
@@ -483,10 +484,10 @@ main()
 	# export results to folder and set access rights
         pwd=$(pwd)
         cd ${FLAGS_path} \
-          && tar --append --file=data/tar/${FLAGS_name}.tar ${FLAGS_sample} \
+          && tar --append --file=data/tar_tmp/${FLAGS_name}.tar ${FLAGS_sample} \
           && cd $pwd \
-          && chmod 777 ${FLAGS_path}/data/tar/${FLAGS_name}.tar \
-          && echocolor "[Results for sample $TAG are written to /home/eden/data/tar/${FLAGS_name}.tar]" \
+          && chmod 777 ${FLAGS_path}/data/tar_tmp/${FLAGS_name}.tar \
+          && echocolor "[Results for sample $TAG are written to /home/eden/data/tar_tmp/${FLAGS_name}.tar]" \
           && shinylog "exporting results for sample $TAG" \
           || shinyerror "error on exporting results"		
     fi || shinyerror "error dnds script"
