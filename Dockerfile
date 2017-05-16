@@ -77,7 +77,7 @@ COPY start_server.sh /home/eden/start_server.sh
 # chmod -R 777 /srv/shiny-server/eden-visualizer &&\
 # chown -R root:root /srv/shiny-server 
 
-RUN wget https://raw.githubusercontent.com/philippmuench/eden_ui/master/packrat/bundles/eden_ui-2017-05-15.tar.gz -O /srv/shiny-server/bundle.tar.gz &&\
+RUN wget https://raw.githubusercontent.com/philippmuench/eden_ui/master/packrat/bundles/eden_ui-2017-05-16.tar.gz -O /srv/shiny-server/bundle.tar.gz &&\
  tar -xvzf /srv/shiny-server/bundle.tar.gz --directory=/srv/shiny-server/ && rm -f /srv/shiny-server/bundle.tar.gz &&\
  chmod -R 777 /srv/shiny-server/eden_ui &&\
  chown -R root:root /srv/shiny-server
@@ -90,14 +90,16 @@ COPY src/index.html /srv/shiny-server/index.html
 COPY src/bootstrap.css /srv/shiny-server/bootstrap.css
 COPY src/bootstrap.min.css /srv/shiny-server/bootstrap.min.css
 COPY src/logo2.png /srv/shiny-server/logo2.png
-COPY src/logo.png /srv/shiny-server/logo.png
 
 #========================================
 # install R packages
 #========================================
 
-#RUN R -e 'setwd("/srv/shiny-server/eden-visualizer"); install.packages("packrat" , #repos="http://cran.us.r-project.org"); packrat::restore()'
+#RUN R -e 'setwd("/srv/shiny-server/eden-visualizer"); 
+#packages("packrat" , #repos="http://cran.us.r-project.org"); packrat::restore()'
 RUN R -e 'setwd("/srv/shiny-server/eden_ui"); install.packages("packrat" , repos="http://cran.us.r-project.org"); packrat::restore()'
+
+
 
 #========================================
 # shFlags
@@ -191,8 +193,8 @@ RUN mkdir /home/eden/tigr_data &&\
 #========================================
 RUN mkdir -p /home/eden/data/tar &&\
   wget https://www.dropbox.com/s/xf86eaml6qauv3q/oligo.tar?dl=1 -O /home/eden/data/tar/oligo.tar #&&\
-#  wget https://www.dropbox.com/s/7usgqx72m4ndlf2/bmi.tar?dl=1 -O /home/eden/data/tar/bmi.tar  &&\
-#  wget https://www.dropbox.com/s/ww9ubr4dufh15r9/bodysites.tar?dl=1 -O /home/eden/data/tar/bodysites.tar
+  wget https://www.dropbox.com/s/7usgqx72m4ndlf2/bmi.tar?dl=1 -O /home/eden/data/tar/bmi.tar  &&\
+  wget https://www.dropbox.com/s/ww9ubr4dufh15r9/bodysites.tar?dl=1 -O /home/eden/data/tar/bodysites.tar
 #========================================
 # Entrypoint
 #========================================
@@ -204,6 +206,8 @@ WORKDIR /home/eden
 # create dirs
 RUN mkdir -p /home/eden/data/faa /home/eden/data/ffn /home/eden/data/csv /home/eden/data/raw
 
+RUN chmod 777 -R /usr/local/lib/R/site-library
+
 # port for shiny-server
 EXPOSE 3838
 
@@ -211,6 +215,8 @@ EXPOSE 3838
 RUN groupadd -r eden && useradd -r -g eden eden &&\
   chown -R eden:eden /var/log /var/lib /srv/shiny-server /home/eden
 RUN sed -i '2s/.*/run_as eden;/' /etc/shiny-server/shiny-server.conf
+RUN chmod 777 /etc/shiny-server/shiny-server.conf
+#RUN sed -i '12s/.*/  site_dir \/srv\/shiny-server\/eden_ui\/;/' /etc/shiny-server/shiny-server.conf
 USER eden
 
 # start pipeline

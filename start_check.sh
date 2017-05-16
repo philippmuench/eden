@@ -9,6 +9,8 @@ LOCK_FILE=/home/eden/lock.txt
   || shinyerror "cannot find src/lib.logging.sh, error code 98"
 
 function clean_up {
+  mv data/tar_tmp/* data/tar/
+  shinylog "moving files" \
   rm -f $LOCK_FILE
   exit
 }
@@ -19,7 +21,7 @@ trap clean_up SIGHUP SIGINT SIGTERM
 # generate lock file, this will be processed by shiny to show that the process in running
 touch $LOCK_FILE \
   && shinylog "start process" \
-  || shinyerror "cannot create lock file, error code 99"
+|| shinyerror "cannot create lock file, error code 99"
 
 # run check procedure
 shinylog "running check.sh"
@@ -50,16 +52,17 @@ else
   --cpu_number $3 \
   --gap_threshold $5 \
   --name $4 \
-  --sample_list $7 \
-  && shinylog "eden finished"\
-  && edenpassed=true \
-  || shinyerror "canont run eden.sh"
+  --sample_list $7
+  edenpassed=true
+  shinylog "movind data"
+  mv /home/eden/data/tar_tmp/* /home/eden/data/tar
+  shinylog "finished"
+  rm -f $LOCK_FILE
 fi || shinyerror "cannot execute eden.sh, error code 101"
 
 # remove lock file if eden completed
-if [ "$edenpassed" = true ]; then
-  mv data/tar_tmp/*.tar data/tar/
-  rm -f $LOCK_FILE
-  shinylog "finished"
-fi
+#if [ "$edenpassed" = true ]; then
+#  rm -f $LOCK_FILE
+#  shinylog "finished"
+#fi
 
