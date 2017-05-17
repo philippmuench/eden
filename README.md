@@ -44,6 +44,7 @@ EDEN is the first software for the rapid detection of protein families and regio
 ## FAQ
 
  > Should one upload raw sequencing reads or (partially) assembled sequences?If one is preferred, why?  
+
 Currently, eden is optimized to work with assembled input files. Inside eden we use HMMER to find gene families found in the input sequences, here we check also for a overlap of the HMM model and the input sequences. If the input sequences are too small this filter process may be too stringend.
 
 ## Development
