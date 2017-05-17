@@ -4,7 +4,7 @@ EDEN is the first software for the rapid detection of protein families and regio
  
 ## Table of Contents  
 [Quick start](#quick-start)  
-[Extended installation guide](#Extended-installation-guide)  
+[Extended installation guide](#extended-installation-guide)  
 [Demo](#demo)  
 [Development](#development)  
 [FAQ](#faq)  
@@ -44,9 +44,7 @@ EDEN is the first software for the rapid detection of protein families and regio
 
 ## FAQ
 
- > Should one upload raw sequencing reads or (partially) assembled sequences?If one is preferred, why?  
 
-Currently, EDEN is optimized to work with assembled input files. Inside EDEN we use HMMER to find gene families found in the input sequences, here we check also for a overlap of the HMM model and the input sequences. If the input sequences are too small this filter process may be too stringend.
 
 > What is the minimum fold-coverage of a given gene family below which meaningful analysis is not possible?  
 
@@ -54,9 +52,27 @@ EDEN reaches comparable results to HyPhy SLAC for gene families that contain 3 o
 
 > How many files, and at what file sizes, can the pipeline handle?  
 
+From the software site, there is no limit in terms of the number of analyzed samples per run. For large datasets of more than 25 metagenomes we recommend using EDEN on a cloud service such as Amazon AWS (installation guide is available at https://github.com/hzi-bifo/eden)
+
 > How does computation time scale with number of nucleotides submitted?  
 
-Please note, that this pipeline needs to be executed on the user's machine or on a cloud (such as Amazon EC2 instances) and currently we not offer computational resources for this software and the link in the manuscripts are currently for providing example output to the reader. See the [Extended installation guide](#Extended-installation-guide) if you plan to install the software on the cloud service 'Amazon AWS', one of the most used cloud services. Based on this, the runtime of the pipeline is only limited to the users server capability which can be nearly unlimited in case of Amazon EC2 machines (because the runtime is linear with the number of input files and HMM models). 
+EDEN is linear in runtime with the number of HMM (gene families) and the number of sequences per family submitted. Please note, that this pipeline needs to be executed on the user's machine or on a cloud (such as Amazon EC2 instances) and currently we not offer computational resources for this software and the link in the manuscripts are currently for providing example output to the reader. See the [Extended installation guide](#Extended-installation-guide) if you plan to install the software on the cloud service 'Amazon AWS', one of the most used cloud services. Based on this, the runtime of the pipeline is only limited to the users server capability which can be nearly unlimited in case of Amazon EC2 machines (because the runtime is linear with the number of input files and HMM models). 
+
+ > How much memory is required? 
+
+We used google cAdvisor to analyzes resource usage and performance characteristics of EDEN on example datasets. On startup and visualization of pre-computed 66 HMP and BMI samples which are described in the manuscript, a peak RAM usage of 2.05 GB and a maximum of 4.3 GB disk usage was observed. When processing 20 metagenomic samples (HMP project, ~54.000 contigs) we observed a peak RAM usage of 4.15 GB and disk usage of 5.25 GB.
+
+> Is it meaningful to apply the pipeline to microbial communities of low complexity (perhaps dominated by a few abundant pathogens)?  
+
+EDEN can also be applied to dataset that consists of samples with limited diversity e.g. by domination of single population but dN/dS values should be interpreted with caution (see https://doi.org/10.1371/journal.pgen.1000304)
+
+
+ > Should one upload raw sequencing reads or (partially) assembled sequences?If one is preferred, why?  
+
+We recommend to use assembled input files instead of short sequencing reads because thresholds used for HMMER are optimized for sequences that span most of the input HMM which is may not the case for short reads.
+
+
+
 
 ## Development
 ### Rebuild docker image 
