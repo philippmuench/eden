@@ -12,8 +12,9 @@ EDEN is the first software for the rapid detection of protein families and regio
 ## Quick start
 1. make sure you have installed [Docker](https://github.com/docker/docker) or install it via `sudo apt-get install docker.io`
 2. make sure you have a up to date version of [Google Chrome](https://www.google.de/chrome/browser/desktop/) or [Mozilla Firefox](https://www.mozilla.org/de/firefox/new/)
-3. download/start eden by typing `sudo docker run -p 80:3838 philippmuench/eden` (version with example files) you may want to use the smaller docker image without example files `sudo docker run -p 80:3838 philippmuench/eden:minimal`  
+3. download/start EDEN by typing `sudo docker run -p 80:3838 philippmuench/eden` (version with example files) you may want to use the smaller docker image without example files `sudo docker run -p 80:3838 philippmuench/eden:minimal`  
 4. open your webbrowser and point it to [localhost](localhost), you should see the welcome screen
+5. download [sample input files](https://github.com/philippmuench/eden/tree/master/sample_files) to test EDEN
 
 ## Extended installation guide
 ### Windows
@@ -45,7 +46,7 @@ EDEN is the first software for the rapid detection of protein families and regio
 
  > Should one upload raw sequencing reads or (partially) assembled sequences?If one is preferred, why?  
 
-Currently, eden is optimized to work with assembled input files. Inside eden we use HMMER to find gene families found in the input sequences, here we check also for a overlap of the HMM model and the input sequences. If the input sequences are too small this filter process may be too stringend.
+Currently, EDEN is optimized to work with assembled input files. Inside EDEN we use HMMER to find gene families found in the input sequences, here we check also for a overlap of the HMM model and the input sequences. If the input sequences are too small this filter process may be too stringend.
 
 ## Development
 ### Rebuild docker image 
