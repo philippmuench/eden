@@ -48,6 +48,16 @@ EDEN is the first software for the rapid detection of protein families and regio
 
 Currently, EDEN is optimized to work with assembled input files. Inside EDEN we use HMMER to find gene families found in the input sequences, here we check also for a overlap of the HMM model and the input sequences. If the input sequences are too small this filter process may be too stringend.
 
+> What is the minimum fold-coverage of a given gene family below which meaningful analysis is not possible?  
+
+EDEN reaches comparable results to HyPhy SLAC for gene families that contain 3 or more sequences in their alignment. If less than two sequences found for a gene family, the gene family will not be processed.
+
+> How many files, and at what file sizes, can the pipeline handle?  
+
+> How does computation time scale with number of nucleotides submitted?  
+
+Please note, that this pipeline needs to be executed on the user's machine or on a cloud (such as Amazon EC2 instances) and currently we not offer computational resources for this software and the link in the manuscripts are currently for providing example output to the reader. See the [Extended installation guide](#Extended-installation-guide) if you plan to install the software on the cloud service 'Amazon AWS', one of the most used cloud services. Based on this, the runtime of the pipeline is only limited to the users server capability which can be nearly unlimited in case of Amazon EC2 machines (because the runtime is linear with the number of input files and HMM models). 
+
 ## Development
 ### Rebuild docker image 
 
