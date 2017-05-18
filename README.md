@@ -1,21 +1,29 @@
-# eden
-dependencies: 
-- [Docker](https://github.com/docker/docker)
-- up to date version of [Google Chrome](https://www.google.de/chrome/browser/desktop/) or [Mozilla Firefox](https://www.mozilla.org/de/firefox/new/)
+# EDEN - Evolutionary Dynamics within Environments
 
-# how to start docker
-## install linux & macOS
-1. make sure you have installed docker or install it via `sudo apt-get install docker.io`
-2. download/start the docker image `sudo docker run -p 80:3838 edensoftware/eden` (version with example files) you may want to use the smaller docker image without example files `sudo docker run -p 80:3838 edensoftware/eden:minimal` 
+EDEN is the first software for the rapid detection of protein families and regions under positive selection, as well as their associated biological processes, from meta- and pangenome data. It provides an interactive result visualization for detailed comparative analyses.
+ 
+## Table of Contents  
+[Quick start](#quick-start)  
+[Extended installation guide](#extended-installation-guide)  
+[Demo](#demo)  
+[Development](#development)  
+[FAQ](#faq)  
+
+## Quick start
+1. make sure you have installed [Docker](https://github.com/docker/docker) or install it via `sudo apt-get install docker.io`
+2. make sure you have a up to date version of [Google Chrome](https://www.google.de/chrome/browser/desktop/) or [Mozilla Firefox](https://www.mozilla.org/de/firefox/new/)
+3. download/start EDEN by typing `sudo docker run -p 80:3838 philippmuench/eden`
 4. open your webbrowser and point it to [localhost](localhost), you should see the welcome screen
+5. download [sample input files](https://github.com/philippmuench/eden/tree/master/sample_files) to test EDEN
 
-## install eden on windows
+## Extended installation guide
+### Windows
 1. see the tutorial https://docs.docker.com/docker-for-windows/ for installation and setting up docker on your windows machine
 2. Press **WinKey + R**, Input `cmd` and press enter to start the **cmd.exe** to open the command promt
 3. Type in the following command to download/start the docker image `sudo docker run -p 80:3838 edensoftware/eden` 
 4. point your webbrowser to [localhost](localhost), you should see the welcome screen
 
-## install eden in the cloud (via amazon aws) (windows/linux/macOS)
+### Amazon AWS (via Windows/Linux/macOS)
 1. see https://aws.amazon.com/de/ec2/ and create an account and log in
 2. go to **Dahsboard** and click on **Launch Instance** and select **Ubuntu Server 14.4 LTS**
 3. choose the size of of server you want to rent, **t2.micro** is maybe free for some users
@@ -26,23 +34,48 @@ dependencies:
 10. On the terminal screen execute the command: `sudo apt-get install docker.io && sudo docker run -p 80:3838 edensoftware/eden`
 11. point your browser to the **Public DNS** or **Public IP** of your instance (i.e. `ec2-54-90-153-208.compute-1.amazonaws.com`)(under the **Description** Tab in the **Instance** Page in the aws administration panel)
 
-# how to use docker
-## submit a new job
-![submit a new job](start.gif "submit a new job")
+## Demo
 
-## visualize results
-![visualize results](samples.gif "visualize results")
+[see live demo](http://eden.bifo.helmholtz-hzi.de/)
 
-# develop
-## build your own docker image
+## FAQ
 
-you can create the docker image from scratch:
+> What is the minimum fold-coverage of a given gene family below which meaningful analysis is not possible?  
+
+EDEN reaches comparable results to HyPhy SLAC for gene families that contain 3 or more sequences in their alignment. If less than two sequences found for a gene family, the gene family will not be processed.
+
+> How many files, and at what file sizes, can the pipeline handle?  
+
+From the software site, there is no limit in terms of the number of analyzed samples per run. For large datasets of more than 25 metagenomes we recommend using EDEN on a cloud service such as Amazon AWS (installation guide is available at https://github.com/hzi-bifo/eden)
+
+> How does computation time scale with number of nucleotides submitted?  
+
+EDEN is linear in runtime with the number of HMM (gene families) and the number of sequences per family submitted. Please note, that this pipeline needs to be executed on the user's machine or on a cloud (such as Amazon EC2 instances) and currently we not offer computational resources for this software and the link in the manuscripts are currently for providing example output to the reader. See the [Extended installation guide](#Extended-installation-guide) if you plan to install the software on the cloud service 'Amazon AWS', one of the most used cloud services. Based on this, the runtime of the pipeline is only limited to the users server capability which can be nearly unlimited in case of Amazon EC2 machines (because the runtime is linear with the number of input files and HMM models). 
+
+> How much memory is required? 
+
+We used google cAdvisor to analyzes resource usage and performance characteristics of EDEN on example datasets. On startup and visualization of pre-computed 66 HMP and BMI samples which are described in the manuscript, a peak RAM usage of 2.05 GB and a maximum of 4.3 GB disk usage was observed. When processing 20 metagenomic samples (HMP project, ~54.000 contigs) we observed a peak RAM usage of 4.15 GB and disk usage of 5.25 GB.
+
+> Is it meaningful to apply the pipeline to microbial communities of low complexity (perhaps dominated by a few abundant pathogens)?  
+
+EDEN can also be applied to dataset that consists of samples with limited diversity e.g. by domination of single population but dN/dS values should be interpreted with caution (see https://doi.org/10.1371/journal.pgen.1000304)
+
+> Should one upload raw sequencing reads or (partially) assembled sequences?If one is preferred, why?  
+
+We recommend to use assembled input files instead of short sequencing reads because thresholds used for HMMER are optimized for sequences that span most of the input HMM which is may not the case for short reads.
+
+## Development
+### Rebuild docker image 
+
+you can build the docker image from scratch:
 
 ```
-git clone https://github.com/naturesubmission/eden.git
+git clone https://github.com/philippmuench/eden.git
 cd eden
-sudo docker build eden_local .
+sudo docker build -t eden_local .
 sudo docker run -p 80:3838 eden_local
 # point browser to localhost
 ```
 
+during the build process the GUI will be installed from https://github.com/philippmuench/eden_ui
+if you want to make changes on the UI, you need to clone this repo and change the path to it in the `Dockerfile`

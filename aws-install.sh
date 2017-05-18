@@ -6,4 +6,4 @@ sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58
 sudo touch /etc/apt/sources.list.d/docker.list && sudo chmod 777 /etc/apt/sources.list.d/docker.list
 sudo echo "deb https://apt.dockerproject.org/repo ubuntu-trusty main" >> /etc/apt/sources.list.d/docker.list
 sudo apt-get update && sudo apt-get install -y linux-image-extra-$(uname -r) docker-engine
-sudo docker pull edensoftware/eden
+sudo docker pull philippmuench/eden
