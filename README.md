@@ -5,6 +5,7 @@ EDEN is the first software for the rapid detection of protein families and regio
 ## Table of Contents  
 [Quick start](#quick-start)  
 [Extended installation guide](#extended-installation-guide)  
+[File Format Specification](#file-format-specification)  
 [Demo](#demo)  
 [Development](#development)  
 [FAQ](#faq)  
@@ -36,9 +37,9 @@ EDEN is the first software for the rapid detection of protein families and regio
 
 
 ## File Format Specification 
-EDEN takes as input either fasta files of open reading frames (ORFs) in FASTA format with the file ending `.faa` for amino acid and and `.ffn` for nucleotide sequences or FASTA file of contigs/scaffold with the file edning  `.fasta`.  See /sample_files/fasta for example.
+EDEN takes as input either fasta files of open reading frames (ORFs) in FASTA format with the file ending `.faa` for amino acid and and `.ffn` for nucleotide sequences or FASTA file of contigs/scaffold with the file edning  `.fasta`.  See [sample files](/sample_files/fasta) for example.
 
-You can also provide one Amino Hidden Markov Models (HMM) file (which can contain may HMM models). See /sample_files/gene_families.hmm for example file. You can generate these files based on multiple sequence alignment of amino acid sequnces of the protein familiy of interest or download precomputed HMM e.g. from TIGRFAM database.
+You can also provide one Amino Hidden Markov Models (HMM) file (which can contain may HMM models). See [sample file](sample_files/gene_families.hmm) for example file. You can generate these files based on multiple sequence alignment of amino acid sequnces of the protein familiy of interest or download precomputed HMM e.g. from TIGRFAM database.
 
 ## Demo
 
