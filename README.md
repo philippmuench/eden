@@ -34,6 +34,12 @@ EDEN is the first software for the rapid detection of protein families and regio
 10. On the terminal screen execute the command: `sudo apt-get install docker.io && sudo docker run -p 80:3838 edensoftware/eden`
 11. point your browser to the **Public DNS** or **Public IP** of your instance (i.e. `ec2-54-90-153-208.compute-1.amazonaws.com`)(under the **Description** Tab in the **Instance** Page in the aws administration panel)
 
+
+## File Format Specification 
+EDEN takes as input either fasta files of open reading frames (ORFs) in FASTA format with the file ending `.faa` for amino acid and and `.ffn` for nucleotide sequences or FASTA file of contigs/scaffold with the file edning  `.fasta`.  See /sample_files/fasta for example.
+
+You can also provide one Amino Hidden Markov Models (HMM) file (which can contain may HMM models). See /sample_files/gene_families.hmm for example file. You can generate these files based on multiple sequence alignment of amino acid sequnces of the protein familiy of interest or download precomputed HMM e.g. from TIGRFAM database.
+
 ## Demo
 
 [see live demo](http://eden.bifo.helmholtz-hzi.de/)
