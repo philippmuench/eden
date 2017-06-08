@@ -219,11 +219,10 @@ reformatfasta()
 {
     log "[I] Reformatting files in folder $1"
     for file in $1/*; do mv "$file" "${file/.*}.msa_unformatted"; done
-    cwd=$(pwd)
-    cd $1
-    /home/eden/src/reformat.pl -g '-' -uc -l 100 fas a2m '*.msa_unformatted' fasta.msa >\
-     /dev/null 2> /dev/null || err "cannot reformat FASTA files"
-    cd $cwd
+
+    for file in $1/*.msa_unformatted; do
+      /home/eden/src/reformat.pl -g '-' -uc -l 100 fas a2m $file ${file%.*}.msa
+    done
 }
 
 # this function gets executed by parallel and runs the phylotreetols for dnds
