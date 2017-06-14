@@ -21,7 +21,7 @@ EDEN is the first software for the rapid detection of protein families and regio
 ### Windows
 1. see the tutorial https://docs.docker.com/docker-for-windows/ for installation and setting up docker on your windows machine
 2. Press **WinKey + R**, Input `cmd` and press enter to start the **cmd.exe** to open the command promt
-3. Type in the following command to download/start the docker image `sudo docker run -p 80:3838 edensoftware/eden` 
+3. Type in the following command to download/start the docker image `sudo docker run -p 80:3838 philippmuench/eden` 
 4. point your webbrowser to [localhost](localhost), you should see the welcome screen
 
 ### Amazon AWS (via Windows/Linux/macOS)
@@ -32,7 +32,7 @@ EDEN is the first software for the rapid detection of protein families and regio
 5. create a new key pair, and download this file to your local machine
 6. click **View Instance** and wait till the **Instance State** goes from **pending/initializing** to **running**
 7. click on "Launch Instance" and select **A Java SSH Client directly from my browser (Java required)** add add the path to the .pem file you downloaded in step 5. 
-10. On the terminal screen execute the command: `sudo apt-get install docker.io && sudo docker run -p 80:3838 edensoftware/eden`
+10. On the terminal screen execute the command: `sudo apt-get install docker.io && sudo docker run -p 80:3838 philippmuench/eden`
 11. point your browser to the **Public DNS** or **Public IP** of your instance (i.e. `ec2-54-90-153-208.compute-1.amazonaws.com`)(under the **Description** Tab in the **Instance** Page in the aws administration panel)
 
 
