@@ -1,0 +1,2 @@
+group_a;mucosa2+mucosa1+mucosa3
+group_b;nares2+nares3+nares1
