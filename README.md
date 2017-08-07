@@ -71,6 +71,10 @@ EDEN can also be applied to dataset of samples with limited diversity e.g. by do
 
 We recommend to use assembled input files instead of raw short reads because the thresholds used for HMMER are optimized for sequences that span most of the input HMM, which is usually not the case for short reads.
 
+> Can I run eden without the GUI?  
+
+We provide a detailed description how to perform this analysis here https://gist.github.com/philippmuench/8556613a6a0b848d8e3fd4110943cbbf
+
 ## Development
 ### Rebuild docker image 
 
